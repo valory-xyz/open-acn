@@ -1,6 +1,6 @@
 test:
-	go test -gcflags=-l -p 1 -timeout 0 -count 1 -coverprofile=coverage.out -v ./... 
-	go tool cover -func=coverage.out
+	go test -gcflags=-l -p 1 -timeout 0 -count 1 -covermode=atomic -coverprofile=coverage.txt -v ./... 
+	go tool cover -func=coverage.txt
 
 lint:
 	golines . -w
