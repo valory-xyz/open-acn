@@ -25,11 +25,19 @@ package dhtpeer
 
 import (
 	"bufio"
+	"bytes"
 	"context"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/binary"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"log"
+	"math/big"
 	"net"
 	"os"
 	"strconv"
@@ -37,13 +45,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/pkg/errors"
 
 	"github.com/rs/zerolog"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/crypto"
+	cryptop2p "github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
@@ -117,8 +126,8 @@ type DHTPeer struct {
 
 	registrationDelay time.Duration
 
-	key             crypto.PrivKey
-	publicKey       crypto.PubKey
+	key             cryptop2p.PrivKey
+	publicKey       cryptop2p.PubKey
 	localMultiaddr  multiaddr.Multiaddr
 	publicMultiaddr multiaddr.Multiaddr
 	bootstrapPeers  []peer.AddrInfo
@@ -126,20 +135,21 @@ type DHTPeer struct {
 	dht         *kaddht.IpfsDHT
 	routedHost  *routedhost.RoutedHost
 	tcpListener net.Listener
+	cert        *tls.Certificate
 
-	addressAnnounced bool
+	addressAnnounced   bool
 	addressAnnouncedWg sync.WaitGroup
-	myAgentAddress   string
-	myAgentRecord    *acn.AgentRecord
-	myAgentReady     func() bool
-	dhtAddresses     map[string]string
-	acnStatuses      map[string]chan *acn.StatusBody
-	tcpAddresses     map[string]net.Conn
-	agentRecords     map[string]*acn.AgentRecord
-	acnStatusesLock  sync.RWMutex
-	dhtAddressesLock sync.RWMutex
-	tcpAddressesLock sync.RWMutex
-	agentRecordsLock sync.RWMutex
+	myAgentAddress     string
+	myAgentRecord      *acn.AgentRecord
+	myAgentReady       func() bool
+	dhtAddresses       map[string]string
+	acnStatuses        map[string]chan *acn.StatusBody
+	tcpAddresses       map[string]net.Conn
+	agentRecords       map[string]*acn.AgentRecord
+	acnStatusesLock    sync.RWMutex
+	dhtAddressesLock   sync.RWMutex
+	tcpAddressesLock   sync.RWMutex
+	agentRecordsLock   sync.RWMutex
 
 	// TOFIX(LR): maps and locks need refactoring for better abstraction
 	processEnvelope func(*aea.Envelope) error
@@ -609,14 +619,74 @@ func (dhtPeer *DHTPeer) Close() []error {
 	return status
 }
 
+func generate_x509_cert() (*tls.Certificate, error) {
+	privBtcKey, err := btcec.NewPrivateKey(elliptic.P256())
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating new private key")
+	}
+	privKey := privBtcKey.ToECDSA()
+	pubKey := &privKey.PublicKey
+
+	ca := &x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			Organization: []string{"Acn Node"},
+		},
+		NotBefore: time.Now(),
+		NotAfter:  time.Now().AddDate(1, 0, 0),
+
+		KeyUsage: x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage: []x509.ExtKeyUsage{
+			x509.ExtKeyUsageClientAuth,
+			x509.ExtKeyUsageServerAuth,
+		},
+		BasicConstraintsValid: true,
+	}
+
+	certBytes, err := x509.CreateCertificate(rand.Reader, ca, ca, pubKey, privKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating ca")
+	}
+	certPEM := new(bytes.Buffer)
+	err = pem.Encode(certPEM, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: certBytes,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "while encoding cert pem")
+	}
+
+	privPEM := new(bytes.Buffer)
+	b, err := x509.MarshalECPrivateKey(privKey)
+	//b, err := cryptop2p.MarshalECDSAPrivateKey(privKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "while marshaling ec private key")
+	}
+	err = pem.Encode(privPEM, &pem.Block{
+		Type:  "EC PRIVATE KEY",
+		Bytes: b,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "while encoding prive pem")
+	}
+
+	cert, err := tls.X509KeyPair(certPEM.Bytes(), privPEM.Bytes())
+	return &cert, err
+}
+
 // launchDelegateService launches the delegate service on the configured uri
 func (dhtPeer *DHTPeer) launchDelegateService() {
 	var err error
 
 	lerror, _, _, _ := dhtPeer.getLoggers()
-
+	dhtPeer.cert, err = generate_x509_cert()
+	if err != nil {
+		lerror(err).Msgf("while generating tls certificate for delegate client server")
+		check(err)
+	}
+	config := &tls.Config{Certificates: []tls.Certificate{*dhtPeer.cert}}
 	uri := dhtPeer.host + ":" + strconv.FormatInt(int64(dhtPeer.delegatePort), 10)
-	dhtPeer.tcpListener, err = net.Listen("tcp", uri)
+	dhtPeer.tcpListener, err = tls.Listen("tcp", uri, config)
 	if err != nil {
 		lerror(err).Msgf("while setting up listening tcp socket %s", uri)
 		check(err)
