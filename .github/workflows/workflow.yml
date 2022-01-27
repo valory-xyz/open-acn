@@ -48,6 +48,11 @@ jobs:
     - uses: actions/setup-go@master
       with:
         go-version: '^1.14.0'
+      id: go
+    - name: Print coverage report
+      working-directory: ./
+      run: |
+        go tool cover -func=coverage.txt  
     - if: matrix.os == 'macos-latest'
       working-directory: .
       run: |
@@ -59,11 +64,7 @@ jobs:
     - if: matrix.python-version == '3.6'
       name: Golang unit tests (libp2p_node)
       working-directory: ./
-      run: make test
-    - name: Print coverage report
-      working-directory: ./
-      run: |
-        go tool cover -func=coverage.txt    
+      run: make test  
 
   libp2p_coverage:
     name: libp2p_coverage
