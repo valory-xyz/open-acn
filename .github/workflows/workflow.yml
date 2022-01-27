@@ -31,7 +31,7 @@ jobs:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         with:
           version: v1.28
-          working-directory: libs/go/libp2p_node
+          working-directory: ./
 
   golang_checks:
     continue-on-error: True
@@ -49,7 +49,7 @@ jobs:
       with:
         go-version: '^1.14.0'
     - if: matrix.os == 'macos-latest'
-      working-directory: ./libs/go/libp2p_node
+      working-directory: .
       run: |
          export LINKPATH=$GOROOT/pkg/tool/darwin_amd64/link
          echo $LINKPATH
@@ -58,10 +58,10 @@ jobs:
          sudo chmod a+x $LINKPATH
     - if: matrix.python-version == '3.6'
       name: Golang unit tests (libp2p_node)
-      working-directory: ./libs/go/libp2p_node
+      working-directory: ./
       run: make test
     - name: Print coverage report
-      working-directory: ./libs/go/libp2p_node/
+      working-directory: ./
       run: |
         go tool cover -func=coverage.txt    
 
@@ -83,11 +83,11 @@ jobs:
           sudo apt-get autoclean
           sudo apt-get install make -y
       - name: Get dependencies
-        working-directory: ./libs/go/libp2p_node/
+        working-directory: ./
         run: |
           make install
       - name: Generate coverage report
-        working-directory: ./libs/go/libp2p_node/
+        working-directory: ./
         run: |
           make test
 
