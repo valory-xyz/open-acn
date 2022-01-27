@@ -1,11 +1,13 @@
 name: open-ACN sanity checks and tests
 
+
 on:
   push:
     branches:
       - develop
       - main
   pull_request:
+
 
 jobs:
   
@@ -54,9 +56,14 @@ jobs:
          sudo cp $LINKPATH ${LINKPATH}_orig
          sudo cp link $LINKPATH
          sudo chmod a+x $LINKPATH
+    - if: matrix.python-version == '3.6'
       name: Golang unit tests (libp2p_node)
       working-directory: ./libs/go/libp2p_node
       run: make test
+    - name: Print coverage report
+      working-directory: ./libs/go/libp2p_node/
+      run: |
+        go tool cover -func=coverage.txt    
 
   libp2p_coverage:
     name: libp2p_coverage
@@ -83,7 +90,4 @@ jobs:
         working-directory: ./libs/go/libp2p_node/
         run: |
           make test
-      - name: Print coverage report
-        working-directory: ./libs/go/libp2p_node/
-        run: |
-          go tool cover -func=coverage.txt
+
