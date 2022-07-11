@@ -17,7 +17,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-go@master
+      - uses: actions/setup-go@v3
         with:
           go-version: "1.17.7"
       - name: Install dependencies (ubuntu-latest)
@@ -26,11 +26,11 @@ jobs:
           sudo apt-get autoremove
           sudo apt-get autoclean
       - name: Golang code style check (libp2p_node)
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v3.1.0
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         with:
-          version: v1.28
+          version: v1.45.2
           working-directory: ./
 
   golang_checks:
@@ -45,13 +45,13 @@ jobs:
     timeout-minutes: 45
     steps:
     - uses: actions/checkout@master
-    - uses: actions/setup-go@master
+    - uses: actions/setup-go@v3
       with:
         go-version: "1.17.7"
     - if: matrix.os == 'macos-latest'
       working-directory: .
       run: |
-         export LINKPATH=$GOROOT/pkg/tool/darwin_amd64/link
+         export LINKPATH=`go env GOTOOLDIR`/link
          echo $LINKPATH
          sudo cp $LINKPATH ${LINKPATH}_orig
          sudo cp link $LINKPATH
