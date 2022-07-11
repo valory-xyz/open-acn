@@ -1,0 +1,11 @@
+
+# hidden files
+.*
+!/.github
+!/.gitignore
+
+# build
+libp2p_node
+
+# logs
+*.log
