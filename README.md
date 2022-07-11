@@ -3,24 +3,24 @@ The `libp2p_node` is an integral part of the ACN.
 
 ## ACN - Agent Communication Network
 
-The agent communication network (ACN) provides a system for agents to find each other and communicate, solely based on their wallet addresses. It addresses the message delivery problem.
+The agent communication network (ACN) provides a system for [agents](https://github.com/valory-xyz/open-aea) 
+to find each other and communicate, solely based on their wallet addresses. 
+It addresses the message delivery problem.
 
-For more details check out the [docs](https://github.com/fetchai/agents-aea/blob/main/docs/acn.md).
+For more details check out the [docs](https://valory-xyz.github.io/open-aea/acn/).
 
 ## Development
 
 To run all tests run:
 
 ``` bash
-go test -p 1 -timeout 0 -count 1 -v ./...
+make test
 ```
 
 To lint:
 
 ``` bash
-golines . -w
-golangci-lint run
-staticcheck ./...
+make lint
 ```
 
 For mocks generation:
