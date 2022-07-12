@@ -9,3 +9,6 @@ libp2p_node
 
 # logs
 *.log
+
+# test coverage
+coverage.txt
