@@ -7,7 +7,6 @@
 package aea_aea_acn_v1_0_0
 
 import (
-	//proto "google.golang.org/protobuf/proto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
