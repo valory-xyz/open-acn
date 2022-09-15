@@ -23,7 +23,7 @@ RUN python3 -m pip install pymultihash ecdsa base58
 WORKDIR /acn/
 
 # get node source code
-RUN git clone https://github.com/valory-xyz/open-acn /acn/node
+COPY . /acn/node
 
 # get deployment script
 COPY run_acn_node_standalone.py /acn/
