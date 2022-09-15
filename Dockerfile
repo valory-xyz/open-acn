@@ -7,7 +7,7 @@ RUN apt-get update && apt-get upgrade -y
 RUN apt install -y python3 python3-pip
 
 # utils
-RUN apt install -y wget git
+RUN apt install -y wget
 
 # golang
 RUN wget https://dl.google.com/go/go1.17.7.linux-amd64.tar.gz && \
