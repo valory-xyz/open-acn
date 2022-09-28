@@ -108,7 +108,7 @@ AEA_P2P_URI_MONITORING=0.0.0.0:8080
 
 then the boostrap node can be started as follows: 
 ```bash
-docker run --network=host --env-file .boostrap_node -it valory/acn-node:v0.1.0 --config-from-env
+docker run --network=host --env-file .bootstrap_node -it valory/open-acn-node:latest --config-from-env
 ```
 
 The expected output should look as follows:
@@ -153,7 +153,7 @@ AEA_P2P_ENTRY_URIS=/dns4/0.0.0.0/tcp/9000/p2p/16Uiu2HAmMC2tJMRaRTeWSESv8mArbq6ji
 
 With the bootstrap node running in a different terminal, we can start the entry node:
 ```bash
-docker run --network=host --env-file .entry_node -it valory/acn-node:v0.1.0 --config-from-env
+docker run --network=host --env-file .entry_node -it valory/open-acn-node:latest --config-from-env
 ```
 
 The output one may expect is similar to that of starting up the bootstrap node.
