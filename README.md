@@ -7,7 +7,7 @@ The agent communication network (ACN) provides a system for [agents](https://git
 to find each other and communicate, solely based on their wallet addresses. 
 It addresses the message delivery problem.
 
-For more details check out the [docs](https://open-aea.docs.autonolas.tech/acn/).
+For more details check out the [docs](https://stack.olas.network/open-aea/acn/).
 
 ## Development
 
