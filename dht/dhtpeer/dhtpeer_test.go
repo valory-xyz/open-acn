@@ -23,10 +23,7 @@ package dhtpeer
 import (
 	"context"
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/tls"
-	"fmt"
-	"log"
 	"math/rand"
 	"net"
 	"os"
@@ -50,9 +47,13 @@ import (
 */
 
 const (
-	DefaultLocalHost    = "127.0.0.1"
-	DefaultLocalPort    = 2000
-	DefaultDelegatePort = 3000
+	DefaultLocalHost = "127.0.0.1"
+	// Ports 2000/3000 collide with common dev tools (macOS Control
+	// Center, AirPlay Receiver, frontend dev servers). Use the
+	// 22000/23000 range, which is well outside the IANA registered
+	// range and what other ACN tests in the repo already use.
+	DefaultLocalPort    = 22000
+	DefaultDelegatePort = 23000
 
 	EnvelopeDeliveryTimeout = 1 * time.Second
 	DHTPeerSetupTimeout     = 5 * time.Second
@@ -861,7 +862,31 @@ func TestMessageOrderingWithDelegateClient(t *testing.T) {
 	print("STOP OF THE TEST")
 }
 
-// TestMessageOrderingWithDelegateClientTwoHops
+// TestMessageOrderingWithDelegateClientTwoHops asserts the README's
+// total-ordering guarantee ("ACN should guarantee total ordering of
+// messages for all agent pairs, independent of the type of connection
+// and ACN messaging pattern used") over a two-hop
+// delegate → peer → peer → delegate path.
+//
+// Known flake: the test can fail intermittently with messages like
+// "Expected counter 87 received counter 85". Root cause is a
+// pre-existing implementation issue: the per-pair serialization in
+// `syncMessages[pair]` serializes calls to `RouteEnvelope(e)`, but
+// `RouteEnvelope` returns immediately after pushing an envelope to the
+// global `slow_queue` when a destination address lookup misses the
+// local DHT cache. The per-pair goroutine then processes envelope N+1,
+// which may hit the cache (populated by N's lookup side effects) and
+// take the fast direct-delivery path, overtaking envelope N.
+//
+// The single-hop variant (`TestMessageOrderingWithDelegateClient`)
+// passes consistently because there is no slow-queue fallback on the
+// single-hop delegate path, so the per-pair goroutine delivers each
+// envelope synchronously in order.
+//
+// Fix options if/when we address this: (a) do the DHT retry loop
+// inline in the per-pair goroutine so slow deliveries stay
+// per-pair-serialized, or (b) make the slow queue per-pair instead of
+// a global shared channel.
 func TestMessageOrderingWithDelegateClientTwoHops(t *testing.T) {
 	peer1Index := 0
 	peer2Index := 1
@@ -1629,7 +1654,7 @@ func TestRoutingAllToAll(t *testing.T) {
 */
 
 func randSeq(n int) string {
-	rand.Seed(time.Now().UnixNano())
+	// math/rand is auto-seeded in Go 1.20+; no explicit Seed needed.
 	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	b := make([]rune, n)
 	for i := range b {
@@ -1791,7 +1816,11 @@ func ValidateTLSSignature(
 	sessionPubKey *ecdsa.PublicKey,
 	peerPubKey string,
 ) error {
-	sessionPubKeyBytes := elliptic.Marshal(sessionPubKey.Curve, sessionPubKey.X, sessionPubKey.Y)
+	ecdhPub, err := sessionPubKey.ECDH()
+	if err != nil {
+		return err
+	}
+	sessionPubKeyBytes := ecdhPub.Bytes()
 	verifyKey, err := utils.PubKeyFromFetchAIPublicKey(peerPubKey)
 	if err != nil {
 		return err
@@ -1937,7 +1966,10 @@ func expectEnvelopeOrdered(t *testing.T, rx chan *aea.Envelope, counter int) {
 		}
 		message, _ := strconv.Atoi(string(envel.Message))
 		if message != counter {
-			log.Fatal(fmt.Sprintf("Expected counter %d received counter %d", counter, message))
+			// Use t.Errorf rather than log.Fatal: the latter calls os.Exit
+			// which kills the whole test binary and masks every subsequent
+			// test in the package, making CI failures much harder to triage.
+			t.Errorf("Expected counter %d received counter %d", counter, message)
 		}
 	case <-timeout:
 		t.Error("Failed to receive envelope before timeout")
