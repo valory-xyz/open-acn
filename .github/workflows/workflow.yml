@@ -88,6 +88,15 @@ jobs:
       contains('refs/heads/main', github.ref)
     env:
       BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+      # Disable the build summary emitted by docker/build-push-action@v6.
+      # The summary embeds commit metadata in a blob that the GHA runner
+      # rescans for legacy workflow commands; any commit message that
+      # happens to contain literal text like "::set-output" (e.g. when
+      # describing a migration away from that deprecated syntax) then
+      # triggers a spurious ##[error] and fails the step *after* the
+      # image has already been built and pushed.
+      DOCKER_BUILD_SUMMARY: "false"
+      DOCKER_BUILD_RECORD_UPLOAD: "false"
     steps:
       - name: Confirm Image
         run: echo "Building image for ${{env.BRANCH_NAME}}"
