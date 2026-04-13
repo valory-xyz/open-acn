@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 USER root
 
@@ -7,8 +7,8 @@ RUN apt-get update && apt-get upgrade -y
 RUN apt install -y python3 python3-pip wget
 
 # golang
-RUN wget https://dl.google.com/go/go1.17.7.linux-amd64.tar.gz && \
-  tar -xzvf go1.17.7.linux-amd64.tar.gz -C /usr/local && \
+RUN wget https://dl.google.com/go/go1.24.0.linux-amd64.tar.gz && \
+  tar -xzvf go1.24.0.linux-amd64.tar.gz -C /usr/local && \
   export PATH=$PATH:/usr/local/go/bin && echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc && \
   mkdir $HOME/go
 
