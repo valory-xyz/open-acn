@@ -123,3 +123,17 @@ jobs:
           context: .
           push: true
           tags: valory/${{ github.event.repository.name }}:${{ steps.vars.outputs.sha_short }}
+
+  all_checks_passed:
+    name: All checks passed
+    if: always()
+    needs:
+      - common_checks_1
+      - golang_checks
+      - libp2p_coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all dependencies succeeded
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+      - run: echo "All required checks passed."
