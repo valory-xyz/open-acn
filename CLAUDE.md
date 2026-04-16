@@ -49,6 +49,10 @@ Key packages:
 
 ACN supports several delivery paths between an AEA `Connection` and a `Peer`, via optional `Delegate Client` and `Relay Peer` hops — see README.md "Messaging patterns" for the full matrix. ACN must guarantee total ordering of messages between any pair of agents regardless of which path is used.
 
+## Audits
+
+Security & correctness audits live under [`audits/`](./audits/). Most recent: [`audits/AUDIT-2026-04-15.md`](./audits/AUDIT-2026-04-15.md). When changing code in `aea/pipe.go`, `dht/common/handlers.go`, `dht/dhtpeer/{dhtpeer,mailbox}.go`, `dht/monitoring/`, or `utils/utils.go`, cross-check the audit's open findings before merging — many of the Critical/High items live in those files.
+
 ## Go / tooling notes
 
 - Go module: `libp2p_node` (go 1.17). Internal imports use the module path, e.g. `libp2p_node/dht/dhtpeer`.
