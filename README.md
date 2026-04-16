@@ -9,6 +9,10 @@ It addresses the message delivery problem.
 
 For more details check out the [docs](https://stack.olas.network/open-aea/acn/).
 
+## Security
+
+A whole-repo security & correctness audit lives under [`audits/`](./audits/). The most recent: [`audits/AUDIT-2026-04-15.md`](./audits/AUDIT-2026-04-15.md). Operators exposing the delegate, mailbox, or Prometheus endpoints publicly should review the Critical and High findings before doing so.
+
 ## Development
 
 To run all tests run:
