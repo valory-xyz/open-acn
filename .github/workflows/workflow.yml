@@ -122,7 +122,13 @@ jobs:
         with:
           context: .
           push: true
-          tags: valory/${{ github.event.repository.name }}:${{ steps.vars.outputs.sha_short }}
+          # Publish both the commit-pinned tag (for reproducible pins in
+          # downstream repos) and a ``:latest`` alias tracking main, so
+          # consumers that just want "the current image" don't have to
+          # bump a SHA on every ACN release.
+          tags: |
+            valory/${{ github.event.repository.name }}:${{ steps.vars.outputs.sha_short }}
+            valory/${{ github.event.repository.name }}:latest
 
   all_checks_passed:
     name: All checks passed
