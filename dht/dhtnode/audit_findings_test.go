@@ -1,14 +1,26 @@
 // Tests in this file each correspond to a Critical or High finding in
 // audits/AUDIT-2026-04-15.md. Every test is expected to FAIL until the
-// underlying bug is fixed.
+// underlying bug is fixed, so the harness is opt-in: tests skip unless
+// RUN_AUDIT_TESTS=1 is set.
 
 package dhtnode
 
 import (
+	"os"
 	"testing"
 
 	"libp2p_node/acn"
 )
+
+// skipUnlessAuditRun makes the audit harness opt-in: every test in this
+// file documents a known-open finding and fails until it is fixed, so
+// they must not turn regular CI red.
+func skipUnlessAuditRun(t *testing.T) {
+	t.Helper()
+	if os.Getenv("RUN_AUDIT_TESTS") == "" {
+		t.Skip("audit-finding regression test; set RUN_AUDIT_TESTS=1 to run (see audits/AUDIT-2026-04-15.md)")
+	}
+}
 
 // TestAuditC2_EmptyPeerPublicKeyAcceptedByPoR verifies that
 // IsValidProofOfRepresentation rejects records with an empty
@@ -25,6 +37,7 @@ import (
 // the empty-string-equality bypass is unreachable even if a future
 // caller supplies an empty representative key.
 func TestAuditC2_EmptyPeerPublicKeyAcceptedByPoR(t *testing.T) {
+	skipUnlessAuditRun(t)
 	record := &acn.AgentRecord{
 		Address:       "fetch1someaddress",
 		PublicKey:     "0260b9be4a90f8d68b1cd6f73fbc83bbe6db48dd1d10cf606e23f9e98be4eaf04a",

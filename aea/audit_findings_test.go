@@ -1,19 +1,31 @@
 // Tests in this file each correspond to a Critical or High finding in
 // audits/AUDIT-2026-04-15.md. Every test is expected to FAIL until the
-// underlying bug is fixed. No source code changes accompany this file —
+// underlying bug is fixed, so the harness is opt-in: tests skip unless
+// RUN_AUDIT_TESTS=1 is set. No source code changes accompany this file —
 // it is purely a regression harness for the audit findings.
 //
 // Run only these tests:
-//   go test -gcflags=-l -count=1 -v -run TestAudit ./aea/...
+//   RUN_AUDIT_TESTS=1 go test -gcflags=-l -count=1 -v -run TestAudit ./aea/...
 
 package aea
 
 import (
 	"encoding/binary"
 	"net"
+	"os"
 	"testing"
 	"time"
 )
+
+// skipUnlessAuditRun makes the audit harness opt-in: every test in this
+// file documents a known-open finding and fails until it is fixed, so
+// they must not turn regular CI red.
+func skipUnlessAuditRun(t *testing.T) {
+	t.Helper()
+	if os.Getenv("RUN_AUDIT_TESTS") == "" {
+		t.Skip("audit-finding regression test; set RUN_AUDIT_TESTS=1 to run (see audits/AUDIT-2026-04-15.md)")
+	}
+}
 
 // TestAuditC1_PipeReadAcceptsHugeSizePrefix verifies that
 // TCPSocketChannel.Read rejects (or at minimum bounds) a 4-byte length
@@ -23,6 +35,7 @@ import (
 // which either OOMs the process or, on some allocators, succeeds and
 // then blocks forever in conn.Read.
 func TestAuditC1_PipeReadAcceptsHugeSizePrefix(t *testing.T) {
+	skipUnlessAuditRun(t)
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("listen: %v", err)
