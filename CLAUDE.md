@@ -55,6 +55,6 @@ Security & correctness audits live under [`audits/`](./audits/). Most recent: [`
 
 ## Go / tooling notes
 
-- Go module: `libp2p_node` (go 1.17). Internal imports use the module path, e.g. `libp2p_node/dht/dhtpeer`.
-- Dependencies are pinned to older libp2p (`go-libp2p v0.8.3`, `go-libp2p-core v0.5.3`, `go-libp2p-kad-dht v0.7.11`) — do not casually bump these; the DHT protocol and stream APIs differ substantially in newer versions.
+- Go module: `libp2p_node` (go 1.25). Internal imports use the module path, e.g. `libp2p_node/dht/dhtpeer`.
+- libp2p stack: `go-libp2p v0.33.x`, `go-libp2p-kad-dht v0.25.x`. Bump libp2p deliberately, not casually — the DHT protocol and stream APIs shift between minor versions, and transitive pins (e.g. quic-go) are tied to the go-libp2p version. Note both hosts are TCP-only (`libp2p.Transport(tcp.NewTCPTransport)`), so QUIC/WebTransport code paths in dependencies are not exercised at runtime.
 - `golines` reformats long lines as part of `make lint`; run it before committing Go changes.
